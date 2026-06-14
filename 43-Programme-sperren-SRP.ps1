@@ -22,6 +22,13 @@
       .\43-Programme-sperren-SRP.ps1                       # Sperrliste setzen
       .\43-Programme-sperren-SRP.ps1 -Entfernen            # Sperren wieder loesen
       .\43-Programme-sperren-SRP.ps1 -Sperrliste "foo.exe","bar.exe"
+
+    Hinweis Ausfuehrung: Laeuft die PS1 nicht ("auf diesem System deaktiviert"),
+    vorher in derselben Admin-PowerShell einmalig:
+      Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+    Dieses Skript ist EIGENSTAENDIG: es braucht keine weiteren Dateien
+    (kein _Common.ps1). Einfach diese eine Datei kopieren und ausfuehren.
 #>
 [CmdletBinding()]
 param(
@@ -45,7 +52,19 @@ param(
     [switch]$Entfernen
 )
 $ErrorActionPreference = 'Stop'
-. "$PSScriptRoot\_Common.ps1"
+
+# --- Eigenstaendige Hilfsfunktionen (frueher aus _Common.ps1, hier eingebettet) ---
+function Write-Schritt { param([string]$Text) Write-Host "[ $Text ]" -ForegroundColor Cyan }
+function Write-Ok      { param([string]$Text) Write-Host "  OK   $Text" -ForegroundColor Green }
+function Write-Warn    { param([string]$Text) Write-Host "  WARN $Text" -ForegroundColor Yellow }
+function Write-Info    { param([string]$Text) Write-Host "       $Text" -ForegroundColor Gray }
+function Set-RegWert {
+    param([string]$Pfad,[string]$Name,[string]$Typ,$Wert)
+    if (-not (Test-Path $Pfad)) { New-Item -Path $Pfad -Force | Out-Null }
+    New-ItemProperty -Path $Pfad -Name $Name -PropertyType $Typ -Value $Wert -Force | Out-Null
+    Write-Ok "$Pfad\$Name = $Wert"
+}
+
 $log = Join-Path $env:USERPROFILE ("Lockdown-SRP-Sperrliste-{0:yyyyMMdd-HHmmss}.log" -f (Get-Date))
 Start-Transcript -Path $log -Append | Out-Null
 
