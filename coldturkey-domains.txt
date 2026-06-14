@@ -1,0 +1,94 @@
+# Domainliste fuer den Cold-Turkey-Block "Kaufsperre".
+# Eine Domain pro Zeile. Zeilen mit # sind Kommentare.
+# Ergaenze oder entferne nach Bedarf. Cold Turkey blockt Domain inkl. Subdomains.
+
+# Grosse Haendler und Marktplaetze
+amazon.de
+amazon.com
+ebay.de
+ebay.com
+kleinanzeigen.de
+otto.de
+zalando.de
+aboutyou.de
+aliexpress.com
+alibaba.com
+temu.com
+shein.com
+wish.com
+etsy.com
+asos.com
+hm.com
+zara.com
+bonprix.de
+baur.de
+breuninger.de
+galeria.de
+kaufland.de
+real.de
+lidl.de
+aldi-onlineshop.de
+
+# Elektronik und Technik
+mediamarkt.de
+saturn.de
+notebooksbilliger.de
+alternate.de
+cyberport.de
+conrad.de
+reichelt.de
+idealo.de
+geizhals.de
+apple.com
+microsoft.com
+thomann.de
+
+# Wohnen, Bau, Sport
+ikea.com
+obi.de
+bauhaus.info
+hornbach.de
+decathlon.de
+
+# Second Hand und Mode-Marktplaetze
+vinted.de
+momox.de
+rebuy.de
+
+# Buy now pay later und Kreditkauf
+klarna.com
+afterpay.com
+affirm.com
+ratepay.com
+paypal.com
+
+# Gaming und digitale Stores
+store.steampowered.com
+epicgames.com
+gog.com
+store.playstation.com
+xbox.com
+nintendo.de
+humblebundle.com
+
+# Allgemeine Preisvergleiche und Deal-Seiten
+mydealz.de
+preisvergleich.de
+billiger.de
+
+# KI-Dienste (kein KI-Zugang gewuenscht)
+chatgpt.com
+chat.openai.com
+openai.com
+claude.ai
+gemini.google.com
+copilot.microsoft.com
+bing.com/chat
+perplexity.ai
+poe.com
+character.ai
+huggingface.co
+mistral.ai
+deepseek.com
+x.ai
+grok.com

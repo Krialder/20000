@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  AppLocker als ECHTE Whitelist fuer den Lockdown gegen Kaufzwang.
+
+  Grundsatz: Fuer das verwaltete Konto laeuft nur, was ausdruecklich erlaubt ist.
+  Erlaubt sind:
+    - der Windows-Ordner (zwingend, sonst startet das System nicht), aber mit
+      gesperrten beschreibbaren Unterordnern und gesperrten LOLBins,
+    - Firefox als einziger Browser,
+    - die im Abschnitt ERLAUBTE PROGRAMME eingetragenen Arbeitsprogramme.
+  Program Files wird NICHT pauschal erlaubt. Edge, andere Browser, KI-Tools und
+  alles Nichteingetragene sind damit automatisch gesperrt.
+  Die Vertrauensperson (Administratoren) darf alles, damit Wartung moeglich bleibt.
+
+  Platzhalter, die 60-AppLocker-Einrichten.ps1 ersetzt:
+    __MODE__     Exe/Script/Msi/Appx: AuditOnly oder Enabled
+    __DLLMODE__  Dll: NotConfigured (Standard) oder Enabled
+    __SID__      SID des verwalteten Standardkontos (Deny-Regeln gelten nur dafuer)
+
+  Arbeitsprogramme freischalten: 63-AppLocker-Programm-erlauben.ps1 nutzen oder
+  von Hand eine FilePublisherRule/FileHashRule mit Action="Allow" im Abschnitt
+  ERLAUBTE PROGRAMME ergaenzen.
+-->
+<AppLockerPolicy Version="1">
+
+  <!-- ===================== EXE (die eigentliche Whitelist) ===================== -->
+  <RuleCollection Type="Exe" EnforcementMode="__MODE__">
+
+    <!-- Zwingende Basis: Windows-Ordner erlauben (fuer alle) -->
+    <FilePathRule Id="a0000001-0000-0000-0000-000000000001" Name="Allow Windows-Ordner" Description="Zwingend, sonst startet das System nicht" UserOrGroupSid="S-1-1-0" Action="Allow">
+      <Conditions><FilePathCondition Path="%WINDIR%\*" /></Conditions>
+    </FilePathRule>
+
+    <!-- Administratoren duerfen alles (Wartung durch die Vertrauensperson) -->
+    <FilePathRule Id="a0000001-0000-0000-0000-000000000003" Name="Allow Administratoren alles" Description="Wartung" UserOrGroupSid="S-1-5-32-544" Action="Allow">
+      <Conditions><FilePathCondition Path="*" /></Conditions>
+    </FilePathRule>
+
+    <!-- ============ ERLAUBTE PROGRAMME ============ -->
+    <!-- Firefox als einziger Browser -->
+    <FilePublisherRule Id="a0000001-0000-0000-0000-000000000004" Name="Allow Mozilla Firefox" Description="Der einzige erlaubte Browser" UserOrGroupSid="S-1-1-0" Action="Allow">
+      <Conditions>
+        <FilePublisherCondition PublisherName="O=MOZILLA CORPORATION, L=SAN FRANCISCO, S=CALIFORNIA, C=US" ProductName="*" BinaryName="*">
+          <BinaryVersionRange LowSection="*" HighSection="*" />
+        </FilePublisherCondition>
+      </Conditions>
+    </FilePublisherRule>
+    <!-- ===ERLAUBTE-PROGRAMME-MARKE=== Weitere Allow-Regeln werden von
+         63-AppLocker-Programm-erlauben.ps1 hier in dieser Sammlung ergaenzt.
+         Beispiel von Hand:
+    <FilePublisherRule Id="a0000001-0000-0000-0000-0000000000ff" Name="Allow Beispiel-Tool" Description="" UserOrGroupSid="S-1-1-0" Action="Allow">
+      <Conditions>
+        <FilePublisherCondition PublisherName="O=HERSTELLER GMBH, L=..., C=DE" ProductName="*" BinaryName="*">
+          <BinaryVersionRange LowSection="*" HighSection="*" />
+        </FilePublisherCondition>
+      </Conditions>
+    </FilePublisherRule>
+    -->
+
+    <!-- ===== DENY (nur fuer das verwaltete Konto __SID__) ===== -->
+    <!-- Die folgenden Sperren sind noetig, weil der Windows-Ordner pauschal erlaubt ist
+         und diese Programme bzw. Ordner sonst missbraucht werden koennten. Browser-Deny
+         ist zusaetzlich defensiv, sie sind ohne Allow-Regel ohnehin gesperrt. -->
+
+    <FilePathRule Id="d0000001-0000-0000-0000-000000000001" Name="Deny Microsoft Edge" Description="Edge raus" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%PROGRAMFILES%\Microsoft\Edge\Application\msedge.exe" /></Conditions></FilePathRule>
+    <FilePathRule Id="d0000001-0000-0000-0000-000000000002" Name="Deny Google Chrome" Description="" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%PROGRAMFILES%\Google\Chrome\Application\chrome.exe" /></Conditions></FilePathRule>
+    <FilePathRule Id="d0000001-0000-0000-0000-000000000003" Name="Deny Brave" Description="" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%PROGRAMFILES%\BraveSoftware\Brave-Browser\Application\brave.exe" /></Conditions></FilePathRule>
+
+    <FilePathRule Id="d0000001-0000-0000-0000-000000000010" Name="Deny mshta.exe" Description="LOLBin" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%SYSTEM32%\mshta.exe" /></Conditions></FilePathRule>
+    <FilePathRule Id="d0000001-0000-0000-0000-000000000011" Name="Deny wscript.exe" Description="Windows Script Host" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%SYSTEM32%\wscript.exe" /></Conditions></FilePathRule>
+    <FilePathRule Id="d0000001-0000-0000-0000-000000000012" Name="Deny cscript.exe" Description="Windows Script Host" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%SYSTEM32%\cscript.exe" /></Conditions></FilePathRule>
+    <FilePathRule Id="d0000001-0000-0000-0000-000000000013" Name="Deny msdt.exe" Description="LOLBin" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%SYSTEM32%\msdt.exe" /></Conditions></FilePathRule>
+    <FilePathRule Id="d0000001-0000-0000-0000-000000000014" Name="Deny regsvr32.exe" Description="LOLBin" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%SYSTEM32%\regsvr32.exe" /></Conditions></FilePathRule>
+
+    <FilePublisherRule Id="d0000001-0000-0000-0000-000000000020" Name="Deny MSBuild" Description="LOLBin" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePublisherCondition PublisherName="O=MICROSOFT CORPORATION, L=REDMOND, S=WASHINGTON, C=US" ProductName="*" BinaryName="MSBUILD.EXE"><BinaryVersionRange LowSection="*" HighSection="*" /></FilePublisherCondition></Conditions></FilePublisherRule>
+    <FilePublisherRule Id="d0000001-0000-0000-0000-000000000021" Name="Deny InstallUtil" Description="LOLBin" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePublisherCondition PublisherName="O=MICROSOFT CORPORATION, L=REDMOND, S=WASHINGTON, C=US" ProductName="*" BinaryName="INSTALLUTIL.EXE"><BinaryVersionRange LowSection="*" HighSection="*" /></FilePublisherCondition></Conditions></FilePublisherRule>
+    <FilePublisherRule Id="d0000001-0000-0000-0000-000000000022" Name="Deny RegAsm" Description="LOLBin" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePublisherCondition PublisherName="O=MICROSOFT CORPORATION, L=REDMOND, S=WASHINGTON, C=US" ProductName="*" BinaryName="REGASM.EXE"><BinaryVersionRange LowSection="*" HighSection="*" /></FilePublisherCondition></Conditions></FilePublisherRule>
+    <FilePublisherRule Id="d0000001-0000-0000-0000-000000000023" Name="Deny RegSvcs" Description="LOLBin" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePublisherCondition PublisherName="O=MICROSOFT CORPORATION, L=REDMOND, S=WASHINGTON, C=US" ProductName="*" BinaryName="REGSVCS.EXE"><BinaryVersionRange LowSection="*" HighSection="*" /></FilePublisherCondition></Conditions></FilePublisherRule>
+    <FilePathRule Id="d0000001-0000-0000-0000-000000000025" Name="Deny MSBuild Framework" Description="LOLBin" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%WINDIR%\Microsoft.NET\Framework\*\MSBuild.exe" /></Conditions></FilePathRule>
+    <FilePathRule Id="d0000001-0000-0000-0000-000000000026" Name="Deny MSBuild Framework64" Description="LOLBin" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%WINDIR%\Microsoft.NET\Framework64\*\MSBuild.exe" /></Conditions></FilePathRule>
+
+    <FilePathRule Id="d0000001-0000-0000-0000-000000000030" Name="Deny Windows\Temp" Description="beschreibbar" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%WINDIR%\Temp\*" /></Conditions></FilePathRule>
+    <FilePathRule Id="d0000001-0000-0000-0000-000000000031" Name="Deny Windows\Tasks" Description="beschreibbar" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%WINDIR%\Tasks\*" /></Conditions></FilePathRule>
+    <FilePathRule Id="d0000001-0000-0000-0000-000000000032" Name="Deny Windows\Tracing" Description="beschreibbar" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%WINDIR%\Tracing\*" /></Conditions></FilePathRule>
+    <FilePathRule Id="d0000001-0000-0000-0000-000000000033" Name="Deny spool color" Description="beschreibbar" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%SYSTEM32%\spool\drivers\color\*" /></Conditions></FilePathRule>
+    <FilePathRule Id="d0000001-0000-0000-0000-000000000034" Name="Deny FxsTmp" Description="beschreibbar" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%SYSTEM32%\FxsTmp\*" /></Conditions></FilePathRule>
+    <FilePathRule Id="d0000001-0000-0000-0000-000000000035" Name="Deny System32\Tasks" Description="beschreibbar" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%SYSTEM32%\Tasks\*" /></Conditions></FilePathRule>
+    <FilePathRule Id="d0000001-0000-0000-0000-000000000036" Name="Deny com\dmp" Description="beschreibbar" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%SYSTEM32%\com\dmp\*" /></Conditions></FilePathRule>
+    <FilePathRule Id="d0000001-0000-0000-0000-000000000037" Name="Deny debug\WIA" Description="beschreibbar" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%WINDIR%\debug\WIA\*" /></Conditions></FilePathRule>
+    <FilePathRule Id="d0000001-0000-0000-0000-000000000038" Name="Deny registration\crmlog" Description="beschreibbar" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%WINDIR%\registration\crmlog\*" /></Conditions></FilePathRule>
+
+  </RuleCollection>
+
+  <!-- ===================== SCRIPT ===================== -->
+  <!-- Skripte (.ps1 .bat .cmd .vbs .js): Windows und Program Files erlaubt, da nur
+       erlaubte EXE laufen. Erzwungene Script-Regeln zwingen PowerShell des Nutzers
+       in den Constrained Language Mode. Beschreibbare Ordner gesperrt. -->
+  <RuleCollection Type="Script" EnforcementMode="__MODE__">
+    <FilePathRule Id="b0000002-0000-0000-0000-000000000001" Name="Allow Windows-Ordner" Description="" UserOrGroupSid="S-1-1-0" Action="Allow"><Conditions><FilePathCondition Path="%WINDIR%\*" /></Conditions></FilePathRule>
+    <FilePathRule Id="b0000002-0000-0000-0000-000000000002" Name="Allow Program Files" Description="" UserOrGroupSid="S-1-1-0" Action="Allow"><Conditions><FilePathCondition Path="%PROGRAMFILES%\*" /></Conditions></FilePathRule>
+    <FilePathRule Id="b0000002-0000-0000-0000-000000000003" Name="Allow Administratoren alles" Description="" UserOrGroupSid="S-1-5-32-544" Action="Allow"><Conditions><FilePathCondition Path="*" /></Conditions></FilePathRule>
+    <FilePathRule Id="b0000002-0000-0000-0000-000000000010" Name="Deny Windows\Temp" Description="" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%WINDIR%\Temp\*" /></Conditions></FilePathRule>
+    <FilePathRule Id="b0000002-0000-0000-0000-000000000011" Name="Deny System32\Tasks" Description="" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%SYSTEM32%\Tasks\*" /></Conditions></FilePathRule>
+    <FilePathRule Id="b0000002-0000-0000-0000-000000000012" Name="Deny spool color" Description="" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%SYSTEM32%\spool\drivers\color\*" /></Conditions></FilePathRule>
+  </RuleCollection>
+
+  <!-- ===================== MSI ===================== -->
+  <!-- Nur Administratoren duerfen installieren. Der Nutzer kann keine Installer starten. -->
+  <RuleCollection Type="Msi" EnforcementMode="__MODE__">
+    <FilePathRule Id="c0000003-0000-0000-0000-000000000002" Name="Allow Administratoren alles" Description="" UserOrGroupSid="S-1-5-32-544" Action="Allow"><Conditions><FilePathCondition Path="*" /></Conditions></FilePathRule>
+  </RuleCollection>
+
+  <!-- ===================== DLL ===================== -->
+  <!-- Standard NotConfigured (Leistung). Mit -DllRegeln auf Enabled, dann staerker.
+       Program Files erlaubt, da nur erlaubte EXE laufen und deren DLLs laden duerfen. -->
+  <RuleCollection Type="Dll" EnforcementMode="__DLLMODE__">
+    <FilePathRule Id="e0000004-0000-0000-0000-000000000001" Name="Allow Windows-Ordner" Description="" UserOrGroupSid="S-1-1-0" Action="Allow"><Conditions><FilePathCondition Path="%WINDIR%\*" /></Conditions></FilePathRule>
+    <FilePathRule Id="e0000004-0000-0000-0000-000000000002" Name="Allow Program Files" Description="" UserOrGroupSid="S-1-1-0" Action="Allow"><Conditions><FilePathCondition Path="%PROGRAMFILES%\*" /></Conditions></FilePathRule>
+    <FilePathRule Id="e0000004-0000-0000-0000-000000000003" Name="Allow Administratoren alles" Description="" UserOrGroupSid="S-1-5-32-544" Action="Allow"><Conditions><FilePathCondition Path="*" /></Conditions></FilePathRule>
+    <FilePathRule Id="e0000004-0000-0000-0000-000000000010" Name="Deny Windows\Temp" Description="" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%WINDIR%\Temp\*" /></Conditions></FilePathRule>
+    <FilePathRule Id="e0000004-0000-0000-0000-000000000011" Name="Deny spool color" Description="" UserOrGroupSid="__SID__" Action="Deny"><Conditions><FilePathCondition Path="%SYSTEM32%\spool\drivers\color\*" /></Conditions></FilePathRule>
+  </RuleCollection>
+
+  <!-- ===================== APPX (Store-Apps) ===================== -->
+  <!-- Signierte Store-Apps erlaubt, sonst bricht die Oberflaeche (Start, Einstellungen).
+       Store-Kaeufe regelt Family Safety. Kann auf Microsoft-only verengt werden. -->
+  <RuleCollection Type="Appx" EnforcementMode="__MODE__">
+    <FilePublisherRule Id="f0000005-0000-0000-0000-000000000001" Name="Allow signierte Store-Apps" Description="" UserOrGroupSid="S-1-1-0" Action="Allow"><Conditions><FilePublisherCondition PublisherName="*" ProductName="*" BinaryName="*"><BinaryVersionRange LowSection="*" HighSection="*" /></FilePublisherCondition></Conditions></FilePublisherRule>
+  </RuleCollection>
+
+</AppLockerPolicy>

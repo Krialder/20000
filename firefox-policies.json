@@ -1,0 +1,67 @@
+{
+  "policies": {
+    "DisableTelemetry": true,
+    "DisableFirefoxStudies": true,
+    "DisablePocket": true,
+    "DisableFeedbackCommands": true,
+    "DisableFirefoxAccounts": true,
+    "DisableProfileImport": true,
+    "DisablePrivateBrowsing": true,
+    "BlockAboutConfig": true,
+    "BlockAboutProfiles": true,
+    "DisableDeveloperTools": false,
+    "DontCheckDefaultBrowser": true,
+    "OfferToSaveLogins": false,
+    "PasswordManagerEnabled": false,
+    "DisableFormHistory": true,
+    "DisableSetDesktopBackground": true,
+    "DNSOverHTTPS": {
+      "Enabled": false,
+      "Locked": true
+    },
+    "EnableTrackingProtection": {
+      "Value": true,
+      "Locked": true,
+      "Cryptomining": true,
+      "Fingerprinting": true
+    },
+    "FirefoxHome": {
+      "Search": true,
+      "TopSites": false,
+      "SponsoredTopSites": false,
+      "Highlights": false,
+      "Pocket": false,
+      "SponsoredPocket": false,
+      "Snippets": false,
+      "Locked": true
+    },
+    "UserMessaging": {
+      "WhatsNew": false,
+      "ExtensionRecommendations": false,
+      "FeatureRecommendations": false,
+      "UrlbarInterventions": false,
+      "SkipOnboarding": true,
+      "Locked": true
+    },
+    "ExtensionSettings": {
+      "*": {
+        "installation_mode": "blocked",
+        "blocked_install_message": "Erweiterungen sind gesperrt. Bei Bedarf die Vertrauensperson fragen."
+      }
+    },
+    "Preferences": {
+      "browser.ml.enable": { "Value": false, "Status": "locked" },
+      "browser.ml.chat.enabled": { "Value": false, "Status": "locked" },
+      "browser.ml.chat.sidebar": { "Value": false, "Status": "locked" },
+      "browser.ml.chat.shortcuts": { "Value": false, "Status": "locked" },
+      "browser.ml.chat.page": { "Value": false, "Status": "locked" },
+      "browser.ml.chat.menu": { "Value": false, "Status": "locked" },
+      "browser.ml.linkPreview.enabled": { "Value": false, "Status": "locked" },
+      "browser.ml.pageAssist.enabled": { "Value": false, "Status": "locked" },
+      "extensions.ml.enabled": { "Value": false, "Status": "locked" },
+      "browser.tabs.groups.smart.enabled": { "Value": false, "Status": "locked" },
+      "browser.tabs.groups.smart.userEnable": { "Value": false, "Status": "locked" },
+      "network.trr.mode": { "Value": 5, "Status": "locked" }
+    }
+  }
+}
