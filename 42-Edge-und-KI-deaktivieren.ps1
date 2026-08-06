@@ -8,11 +8,30 @@
     Beispiele:
       .\42-Edge-und-KI-deaktivieren.ps1
       .\42-Edge-und-KI-deaktivieren.ps1 -EdgeDeinstallieren   # zusaetzlich Edge entfernen (siehe Hinweis)
+
+    Hinweis Ausfuehrung: Laeuft die PS1 nicht ("auf diesem System deaktiviert"),
+    vorher in derselben Admin-PowerShell einmalig:
+      Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+    Dieses Skript ist EIGENSTAENDIG: keine weiteren Dateien noetig (kein _Common.ps1).
+    Immer mit .\ davor starten, sonst deutet PowerShell den Namen als Rechnung.
 #>
 [CmdletBinding()]
 param([switch]$EdgeDeinstallieren)
 $ErrorActionPreference = 'Stop'
-. "$PSScriptRoot\_Common.ps1"
+
+# --- Eigenstaendige Hilfsfunktionen ---
+function Write-Schritt { param([string]$Text) Write-Host "[ $Text ]" -ForegroundColor Cyan }
+function Write-Ok      { param([string]$Text) Write-Host "  OK   $Text" -ForegroundColor Green }
+function Write-Warn    { param([string]$Text) Write-Host "  WARN $Text" -ForegroundColor Yellow }
+function Write-Info    { param([string]$Text) Write-Host "       $Text" -ForegroundColor Gray }
+function Set-RegWert {
+    param([string]$Pfad,[string]$Name,[string]$Typ,$Wert)
+    if (-not (Test-Path $Pfad)) { New-Item -Path $Pfad -Force | Out-Null }
+    New-ItemProperty -Path $Pfad -Name $Name -PropertyType $Typ -Value $Wert -Force | Out-Null
+    Write-Ok "$Pfad\$Name = $Wert"
+}
+
 $log = Join-Path $env:USERPROFILE ("Lockdown-EdgeKI-{0:yyyyMMdd-HHmmss}.log" -f (Get-Date))
 Start-Transcript -Path $log -Append | Out-Null
 try {

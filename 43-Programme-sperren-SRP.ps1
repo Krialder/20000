@@ -31,6 +31,7 @@
       .\43-Programme-sperren-SRP.ps1 -SchnellNur     # nur bekannte Orte, kein Tiefenscan
       .\43-Programme-sperren-SRP.ps1 -Entfernen      # Sperren loesen
       .\43-Programme-sperren-SRP.ps1 -Sperrliste "foo.exe"
+      .\43-Programme-sperren-SRP.ps1 -AuchAdmins     # Sperre gilt auch fuer Admins (Test)
 
     Hinweis Ausfuehrung: Laeuft die PS1 nicht ("auf diesem System deaktiviert"),
     vorher in derselben Admin-PowerShell einmalig:
@@ -60,7 +61,8 @@ param(
     ),
     [switch]$Entfernen,
     [switch]$Tiefenscan,
-    [switch]$SchnellNur
+    [switch]$SchnellNur,
+    [switch]$AuchAdmins   # PolicyScope=0: Sperre gilt auch fuer Administratoren (zum Testen)
 )
 $ErrorActionPreference = 'Stop'
 
@@ -75,24 +77,31 @@ function Set-RegWert {
     Write-Ok "$Pfad\$Name = $Wert"
 }
 
-# Schnelle Aufloesung ueber bekannte Orte. Gibt den ersten Treffer zurueck oder $null.
-function Resolve-Schnell {
+# Schnelle Aufloesung ueber bekannte Orte. Sammelt ALLE Fundorte, nicht nur den
+# ersten - viele System-EXEs (z.B. wordpad.exe) existieren doppelt in
+# Program Files UND Program Files (x86) bzw. System32 UND SysWOW64.
+function Resolve-SchnellAlle {
     param([string]$Name)
-    if ([System.IO.Path]::IsPathRooted($Name) -and (Test-Path $Name)) { return $Name }
+    $treffer = New-Object System.Collections.Generic.List[string]
+    if ([System.IO.Path]::IsPathRooted($Name)) {
+        if (Test-Path $Name) { $treffer.Add($Name) }
+        return $treffer
+    }
     $gc = Get-Command $Name -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($gc -and $gc.Source) { return $gc.Source }
+    if ($gc -and $gc.Source) { $treffer.Add($gc.Source) }
     $orte = @(
         "$env:SystemRoot\System32","$env:SystemRoot\SysWOW64","$env:SystemRoot",
         "$env:ProgramFiles","${env:ProgramFiles(x86)}",
         "$env:ProgramFiles\Windows NT\Accessories",
+        "${env:ProgramFiles(x86)}\Windows NT\Accessories",
         "$env:LOCALAPPDATA\Microsoft\WindowsApps"
     )
     foreach ($o in $orte) {
         if (-not $o) { continue }
         $k = Join-Path $o $Name
-        if (Test-Path $k) { return $k }
+        if (Test-Path $k) { $treffer.Add($k) }
     }
-    return $null
+    return $treffer
 }
 
 # Versionierte WindowsApps-Pfade Update-fest machen:
@@ -139,7 +148,9 @@ try {
 
     Set-RegWert $SaferBasis "DefaultLevel"        "DWord" 262144  # Unrestricted (Standard: erlaubt)
     Set-RegWert $SaferBasis "TransparentEnabled"  "DWord" 1
-    Set-RegWert $SaferBasis "PolicyScope"         "DWord" 1       # Admins ausgenommen
+    $scope = if ($AuchAdmins) { 0 } else { 1 }   # 0 = alle Nutzer, 1 = Admins ausgenommen
+    if ($AuchAdmins) { Write-Warn "AuchAdmins: Sperren gelten auch fuer Administratoren!" }
+    Set-RegWert $SaferBasis "PolicyScope"         "DWord" $scope
     Set-RegWert $SaferBasis "authenticodeenabled" "DWord" 0
     $exeTypen = @("ADE","ADP","BAS","BAT","CHM","CMD","COM","CPL","CRT","EXE","HLP","HTA",
                   "INF","INS","ISP","LNK","MDB","MDE","MSC","MSI","MSP","MST","OCX","PCD",
@@ -161,8 +172,7 @@ try {
     # Phase 1: schnelle Aufloesung (uebersprungen bei -Tiefenscan, damit alle Orte gefunden werden)
     if (-not $Tiefenscan) {
         foreach ($d in $Sperrliste) {
-            $p = Resolve-Schnell -Name $d
-            if ($p) { $gefunden[$d.ToLower()].Add($p) }
+            foreach ($p in (Resolve-SchnellAlle -Name $d)) { $gefunden[$d.ToLower()].Add($p) }
         }
     }
 
@@ -205,8 +215,13 @@ try {
     Write-Info "Aktualisiere Richtlinien..."
     & gpupdate /force | Out-Null
 
-    Write-Warn "Sperre gilt NUR im normalen Nutzerkonto (PolicyScope=1 = Admins frei)."
-    Write-Warn "Als Verwalter testen zeigt keine Wirkung. Im Alltags-Konto nach Neuanmelden pruefen."
+    if (-not $AuchAdmins) {
+        Write-Warn "Sperre gilt NUR fuer Nicht-Administratoren (PolicyScope=1)."
+        Write-Warn "WICHTIG: Ist das Testkonto noch in der Administratoren-Gruppe, greift NICHTS."
+        Write-Info "Pruefen mit:  net localgroup Administratoren"
+    }
+    Write-Warn "Das Nutzerkonto muss sich AB- und wieder ANMELDEN, sonst greift die Sperre evtl. nicht."
+    Write-Info "Blockierte Starts erscheinen in der Ereignisanzeige: Windows-Protokolle > Anwendung, Quelle 'SoftwareRestrictionPolicies'."
     if ($nichtGef.Count -gt 0) {
         Write-Warn "Nirgends auf dem Geraet gefunden: $($nichtGef -join ', ')"
         Write-Info "Davon sind Store-Apps (photos.exe/maps.exe) per SRP ohnehin nicht blockierbar -> AppLocker/Remove-AppxPackage."
